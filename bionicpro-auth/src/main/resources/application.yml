@@ -1,0 +1,34 @@
+server:
+  port: 8001
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  security:
+    user:
+      name:  # пусто
+      password:  # пусто
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+bionicpro:
+  auth:
+    keycloak:
+      url: ${KEYCLOAK_URL:http://localhost:8080}
+      realm: ${KEYCLOAK_REALM:reports-realm}
+      client-id: ${KEYCLOAK_CLIENT_ID:reports-frontend}
+      client-secret: ${KEYCLOAK_CLIENT_SECRET:}
+    session:
+      ttl: 3600
+
+logging:
+  level:
+    com.bionicpro: DEBUG
