@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   keycloak_db:
     image: postgres:14
@@ -11,6 +9,8 @@ services:
       - ./postgres-keycloak-data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
+    networks:
+      - bionicpro-network
 
   keycloak:
     image: quay.io/keycloak/keycloak:21.1
@@ -21,6 +21,8 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak_db:5432/keycloak_db
       KC_DB_USERNAME: keycloak_user
       KC_DB_PASSWORD: keycloak_password
+      KC_HOSTNAME: localhost
+      KC_LOG_LEVEL: INFO,org.keycloak.storage.ldap:DEBUG,org.keycloak.storage.UserStorageManager:DEBUG
     command: start-dev --import-realm
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
@@ -28,11 +30,12 @@ services:
       - "8080:8080"
     depends_on:
       - keycloak_db
+      - ldap
+    networks:
+      - bionicpro-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    build: ./frontend
     ports:
       - "3000:3000"
     environment:
@@ -43,6 +46,8 @@ services:
       REACT_APP_AUTH_URL: http://localhost:8001
     depends_on:
       - bionicpro-auth
+    networks:
+      - bionicpro-network
 
   redis:
     image: redis:7-alpine
@@ -50,6 +55,8 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    networks:
+      - bionicpro-network
 
   bionicpro-auth:
     build: ./bionicpro-auth
@@ -64,6 +71,30 @@ services:
     depends_on:
       - redis
       - keycloak
+    networks:
+      - bionicpro-network
+
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: ldap
+    environment:
+      LDAP_ORGANISATION: "BionicPRO"
+      LDAP_DOMAIN: "bionicpro.local"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_LOG_LEVEL: "256"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+      # Добавьте эти переменные
+      LDAP_ADDITIONAL_SCHEMAS: "cosine"
+    volumes:
+      - ./ldap:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    ports:
+      - "389:389"
+    networks:
+      - bionicpro-network
+
+networks:
+  bionicpro-network:
+    driver: bridge
 
 volumes:
   redis-data:
