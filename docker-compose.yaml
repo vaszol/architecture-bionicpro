@@ -9,6 +9,11 @@ services:
       - ./postgres-keycloak-data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak_user -d keycloak_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - bionicpro-network
 
@@ -22,15 +27,21 @@ services:
       KC_DB_USERNAME: keycloak_user
       KC_DB_PASSWORD: keycloak_password
       KC_HOSTNAME: localhost
-      KC_LOG_LEVEL: INFO,org.keycloak.storage.ldap:DEBUG,org.keycloak.storage.UserStorageManager:DEBUG
+      KC_HTTP_RELATIVE_PATH: /
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_PORT: 8080
     command: start-dev --import-realm
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     ports:
       - "8080:8080"
     depends_on:
-      - keycloak_db
-      - ldap
+      keycloak_db:
+        condition: service_healthy
+      ldap:
+        condition: service_started
     networks:
       - bionicpro-network
 

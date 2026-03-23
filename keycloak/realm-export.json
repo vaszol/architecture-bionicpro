@@ -1,11 +1,9 @@
 {
   "realm": "reports-realm",
   "enabled": true,
-
   "accessTokenLifespan": 120,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
-
   "otpPolicyType": "totp",
   "otpPolicyAlgorithm": "HmacSHA1",
   "otpPolicyInitialCounter": 0,
@@ -13,7 +11,6 @@
   "otpPolicyLookAheadWindow": 1,
   "otpPolicyPeriod": 30,
   "otpPolicyCodeReusable": false,
-
   "roles": {
     "realm": [
       { "name": "user", "description": "Regular user role" },
@@ -46,17 +43,16 @@
       "clientId": "reports-frontend",
       "enabled": true,
       "publicClient": true,
-      "redirectUris": ["http://localhost:3000/*"],
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8080/realms/reports-realm/broker/yandex/endpoint"
+      ],
       "webOrigins": ["http://localhost:3000"],
       "directAccessGrantsEnabled": true,
-      "attributes": { "pkce.code.challenge.method": "S256" }
-    },
-    {
-      "clientId": "reports-api",
-      "enabled": true,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "oNwoLQdvJAvRcL89SydqCWCe5ry1jMgq",
-      "bearerOnly": true
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "exclude.openid.scope": "true"
+      }
     }
   ],
   "userFederationProviders": [
@@ -82,6 +78,75 @@
         "bindCredential": "admin",
         "searchScope": "1",
         "useTruststoreSpi": "never"
+      }
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "yandex",
+      "displayName": "Yandex ID",
+      "enabled": true,
+      "providerId": "oidc",
+      "config": {
+        "clientId": "YOUR_YANDEX_CLIENT_ID",
+        "clientSecret": "YOUR_YANDEX_CLIENT_SECRET",
+        "authorizationUrl": "https://oauth.yandex.ru/authorize?scope=login:email",
+        "tokenUrl": "https://oauth.yandex.ru/token",
+        "userInfoUrl": "https://login.yandex.ru/info",
+        "logoutUrl": "https://oauth.yandex.ru/logout",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "FORCE",
+        "storeToken": "true",
+        "trustEmail": "true",
+        "disableNonce": "true"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "username",
+      "identityProviderAlias": "yandex",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "user.attribute": "username",
+        "claim": "login"
+      }
+    },
+    {
+      "name": "email",
+      "identityProviderAlias": "yandex",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "user.attribute": "email",
+        "claim": "default_email"
+      }
+    },
+    {
+      "name": "firstName",
+      "identityProviderAlias": "yandex",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "user.attribute": "firstName",
+        "claim": "first_name"
+      }
+    },
+    {
+      "name": "lastName",
+      "identityProviderAlias": "yandex",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "user.attribute": "lastName",
+        "claim": "last_name"
+      }
+    },
+    {
+      "name": "yandexId",
+      "identityProviderAlias": "yandex",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "user.attribute": "yandexId",
+        "claim": "id"
       }
     }
   ],
