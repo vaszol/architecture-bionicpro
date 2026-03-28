@@ -64,6 +64,22 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/userinfo")
+    public ResponseEntity<?> getUserInfo(HttpServletRequest request) {
+        String sessionId = getSessionId(request);
+
+        if (sessionId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
+        }
+
+        Map<String, Object> userInfo = authService.getUserInfo(sessionId);
+        if (userInfo == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Session expired"));
+        }
+
+        return ResponseEntity.ok(userInfo);
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
         String sessionId = getSessionId(request);

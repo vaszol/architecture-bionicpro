@@ -4,6 +4,7 @@ const ReportPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [userInfo, setUserInfo] = useState<any>(null);
 
     const AUTH_URL = process.env.REACT_APP_AUTH_URL || 'http://localhost:8001';
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
@@ -29,6 +30,10 @@ const ReportPage: React.FC = () => {
             });
             const data = await response.json();
             setIsAuthenticated(data.authenticated);
+
+            if (data.authenticated) {
+                getUserInfo();
+            }
         } catch (err) {
             console.error('Auth check failed:', err);
             setIsAuthenticated(false);
@@ -54,6 +59,7 @@ const ReportPage: React.FC = () => {
                 sessionStorage.removeItem('pkce_verifier');
                 window.history.replaceState({}, '', window.location.pathname);
                 setIsAuthenticated(true);
+                getUserInfo();
             } else {
                 const errorData = await response.json();
                 setError(errorData.error || 'Authentication failed');
@@ -68,7 +74,6 @@ const ReportPage: React.FC = () => {
     const generateCodeVerifier = (): string => {
         const array = new Uint8Array(32);
         window.crypto.getRandomValues(array);
-        // Преобразуем через Array.from для совместимости
         const chars = Array.from(array).map(byte => String.fromCharCode(byte)).join('');
         return btoa(chars)
             .replace(/=/g, '')
@@ -112,14 +117,35 @@ const ReportPage: React.FC = () => {
         window.location.href = url;
     };
 
+    const getUserInfo = async (): Promise<void> => {
+        console.log("Getting user info...");
+        try {
+            const response = await fetch(`${AUTH_URL}/api/auth/userinfo`, {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("✅ User info:", data);
+            setUserInfo(data);
+
+        } catch (err) {
+            console.error('User info error:', err);
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        }
+    };
+
     const downloadReport = async (): Promise<void> => {
+        console.log("Downloading report...");
         try {
             setLoading(true);
             setError(null);
 
-            var report_id = "prosthetic_1"
-
-            const response = await fetch(`${API_URL}/api/reports/${report_id}`, {
+            const response = await fetch(`${API_URL}/api/reports`, {
                 method: "GET",
                 credentials: "include"
             });
@@ -142,11 +168,9 @@ const ReportPage: React.FC = () => {
                 throw new Error(`HTTP error ${response.status}`);
             }
 
-            // Получаем текст отчёта
             const text = await response.text();
             console.log("✅ Report data:", text);
 
-            // Скачиваем как файл
             const blob = new Blob([text], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -155,9 +179,8 @@ const ReportPage: React.FC = () => {
             a.click();
             window.URL.revokeObjectURL(url);
 
-            alert('Report downloaded! Check console for data.');
-
         } catch (err) {
+            console.error('Download error:', err);
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setLoading(false);
@@ -171,6 +194,7 @@ const ReportPage: React.FC = () => {
                 credentials: 'include'
             });
             setIsAuthenticated(false);
+            setUserInfo(null);
         } catch (err) {
             console.error('Logout failed:', err);
         }
@@ -210,7 +234,20 @@ const ReportPage: React.FC = () => {
             <div className="p-8 bg-white rounded-lg shadow-md text-center">
                 <h1 className="text-2xl font-bold mb-6 text-gray-800">Usage Reports</h1>
 
+                {userInfo && (
+                    <div className="mb-4 p-3 bg-blue-100 rounded text-sm text-blue-700">
+                        Logged in as: <strong>{userInfo.username || userInfo.userId}</strong> ({userInfo.email})
+                    </div>
+                )}
+
                 <div className="space-x-4">
+                    <button
+                        onClick={getUserInfo}
+                        className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                        User Info
+                    </button>
+
                     <button
                         onClick={downloadReport}
                         disabled={loading}
