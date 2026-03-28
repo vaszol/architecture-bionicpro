@@ -6,7 +6,7 @@ const ReportPage: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
     const AUTH_URL = process.env.REACT_APP_AUTH_URL || 'http://localhost:8001';
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
     const KEYCLOAK_URL = process.env.REACT_APP_KEYCLOAK_URL || 'http://localhost:8080';
     const REALM = process.env.REACT_APP_KEYCLOAK_REALM || 'reports-realm';
     const CLIENT_ID = process.env.REACT_APP_KEYCLOAK_CLIENT_ID || 'reports-frontend';
@@ -117,7 +117,9 @@ const ReportPage: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`${API_URL}/reports`, {
+            var report_id = "prosthetic_1"
+
+            const response = await fetch(`${API_URL}/api/reports/${report_id}`, {
                 method: "GET",
                 credentials: "include"
             });
@@ -140,8 +142,19 @@ const ReportPage: React.FC = () => {
                 throw new Error(`HTTP error ${response.status}`);
             }
 
-            const data = await response.json();
-            console.log("✅ Report data:", data);
+            // Получаем текст отчёта
+            const text = await response.text();
+            console.log("✅ Report data:", text);
+
+            // Скачиваем как файл
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
             alert('Report downloaded! Check console for data.');
 
         } catch (err) {

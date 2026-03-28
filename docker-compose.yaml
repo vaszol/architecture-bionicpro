@@ -51,7 +51,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_API_URL: http://localhost:8002
       REACT_APP_KEYCLOAK_URL: http://localhost:8080
       REACT_APP_KEYCLOAK_REALM: reports-realm
       REACT_APP_KEYCLOAK_CLIENT_ID: reports-frontend
@@ -182,6 +182,18 @@ services:
     depends_on:
       airflow-db:
         condition: service_healthy
+    networks:
+      - bionicpro-network
+
+  report-service:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
+    volumes:
+      - ./report-service/app.py:/app/main.py
+    ports:
+      - "8002:80"
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=9000
     networks:
       - bionicpro-network
 
