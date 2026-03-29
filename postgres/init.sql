@@ -40,3 +40,14 @@ FROM (VALUES ('prosthetic_1', 85, 95, 75),
              ('prosthetic_3', 92, 75, 82),
              ('prosthetic_3', 90, 78, 80)) AS v(prosthetic_id, signal_strength, response_time_ms, battery_level)
 WHERE NOT EXISTS (SELECT 1 FROM prosthetic_telemetry LIMIT 1);
+
+
+CREATE USER debezium WITH PASSWORD 'debezium';
+ALTER USER debezium WITH REPLICATION;
+GRANT CONNECT ON DATABASE keycloak_db TO debezium;
+GRANT USAGE ON SCHEMA public TO debezium;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+
+-- Создание публикации для CDC
+CREATE PUBLICATION dbz_publication FOR ALL TABLES;
