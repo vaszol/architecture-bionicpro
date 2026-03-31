@@ -1,3 +1,5 @@
 fastapi
 uvicorn
+clickhouse-driver
 httpx
+requests
